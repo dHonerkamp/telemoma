@@ -17,7 +17,7 @@
 	"runArgs": [
 		"--name=igibson-vscode-honerkam",
 		"-it",
-		"--gpus=all",
+		// "--gpus=all",
 		"--rm",
 		"--network=host",
 		"--env",
@@ -27,11 +27,8 @@
 		"/tmp/.X11-unix:/tmp/.X11-unix:rw",
 		"--volume",
 		"${localEnv:HOME}/.Xauthority:/root/.Xauthority:rw",
-		"--volume",
-		"${localWorkspaceFolder}/data:/opt/iGibson/igibson/data:rw",
 		"--env",
 		"QT_X11_NO_MITSHM=1",
-		"--env",
 		// "--env",
 		// "QT_DEBUG_PLUGINS=1",
 		// for realsense: https://github.com/2b-t/realsense-ros2-docker
@@ -51,7 +48,7 @@
 		"vscode": {
 			// Set *default* container specific settings.json values on container create.
 			"settings": {
-				"python.defaultInterpreterPath": "/miniconda/envs/igibson/bin/python",
+				"python.defaultInterpreterPath": "/miniconda/envs/telemoma/bin/python",
 				"python.linting.enabled": true,
 				// "python.linting.pylintEnabled": true,
 				// 			"python.formatting.autopep8Path": "/opt/conda/bin/autopep8",
