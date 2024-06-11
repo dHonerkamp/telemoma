@@ -67,3 +67,15 @@ The details on the sim environment installations, real robot codebase and instru
 ```
 
 ### Acknowledgements: [Mentioned here](acknowledgements.md)
+
+
+
+## My Stuff
+- Checkout `telemoma-real` branch
+- Missing: `conda run -n ${ENV_NAME} pip install -e .`
+- Realsense in docker: `https://github.com/2b-t/realsense-ros2-docker`
+- Telemoma realsense instructions: `https://github.com/UT-Austin-RobIn/telemoma/blob/telemoma-real/telemoma/human_interface/README.md`
+  - ROS node - DON'T RUN SIMULTANEOUSLY TO PYTHON CODE, otherwise python can't access the camera: `source /opt/ros/noetic/setup.bash && roscore & && roslaunch realsense2_camera rs_camera.launch`
+  - `conda activate telemoma && pip install -e . && source /opt/ros/noetic/setup.bash`
+- `python telemoma/demo_real.py --robot <tiago or hsr> --teleop_config <path-to-config>`
+

@@ -1,3 +1,27 @@
+
+from hsrb_interface import geometry
+from hsrb_interface import settings
+
+def _lookup_odom_to_ref(self, ref_frame_id):
+    """Resolve current reference frame transformation from ``odom``.
+
+    Returns:
+        geometry_msgs.msg.Pose:
+            A transform from robot ``odom`` to ``ref_frame_id``.
+    """
+    odom_to_ref_ros = self._tf2_buffer.lookup_transform(
+        settings.get_frame('odom'),
+        ref_frame_id,
+        # NOTE: changed line to avoid Lookup timeout
+        rospy.Time(0),
+        rospy.Duration(self._tf_timeout)
+    ).transform
+    odom_to_ref_tuples = geometry.transform_to_tuples(odom_to_ref_ros)
+    return geometry.tuples_to_pose(odom_to_ref_tuples)
+from hsrb_interface import joint_group
+joint_group.JointGroup._lookup_odom_to_ref = _lookup_odom_to_ref
+
+
 import os
 import time
 import numpy as np
@@ -81,6 +105,8 @@ class HSR:
         self.ang_scale = 0.2
 
         self.reference_odom = self.odom_listener.get_most_recent_msg()
+        
+        time.sleep(2)
 
     @property
     def eef_pose(self):
