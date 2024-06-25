@@ -17,6 +17,7 @@
 	"runArgs": [
 		"--name=igibson-vscode-honerkam",
 		"-it",
+		// "--privileged",
 		// "--gpus=all",
 		"--rm",
 		"--network=host",
