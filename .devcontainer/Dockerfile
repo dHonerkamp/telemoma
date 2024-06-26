@@ -96,4 +96,14 @@ ENV ROS_MASTER_URI=http://192.168.167.12:11311 \
 
 RUN conda run -n ${ENV_NAME} pip install roslibpy rospkg catkin_pkg empy
 
+
+# ROBOT IO
+RUN git clone https://github.com/bulletphysics/bullet3.git
+WORKDIR /root/bullet3
+RUN sed -i -e 's/cmake -DBUILD_PYBULLET=ON/cmake -DBUILD_PYBULLET=ON -DUSE_OPENVR=ON/' build_cmake_pybullet_double.sh && /bin/bash build_cmake_pybullet_double.sh
+RUN conda run -n ${ENV_NAME} pip install -e .
+RUN echo "alias bullet_vr='~/.steam/steam/ubuntu12_32/steam-runtime/run.sh /root/bullet3/build_cmake/examples/SharedMemory/App_PhysicsServer_SharedMemory_VR'" >> ~/.bashrc
+RUN git clone https://github.com/mees/robot_io.git && cd robot_io && conda run -n ${ENV_NAME} pip install -e .
+
+
 CMD bash
