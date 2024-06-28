@@ -1,6 +1,7 @@
 import rospy
 
 from telemoma.human_interface.teleop_policy import TeleopPolicy
+from telemoma.human_interface.htc import HTCPolicy
 
 from importlib.machinery import SourceFileLoader
 
@@ -37,6 +38,10 @@ def main(args):
     teleop = TeleopPolicy(teleop_config)
     teleop.start()
 
+    for interface in teleop.interfaces:
+        if isinstance(interface, HTCPolicy):
+            teleop.input_device.robot = env.hsr
+
     def shutdown_helper():
         teleop.stop()
     rospy.on_shutdown(shutdown_helper)
@@ -47,8 +52,8 @@ def main(args):
     
         if buttons.get('A', False) or buttons.get('B', False):
             break
-
-        obs, _, _, _ = env.step(action)
+        # TODO: add again
+        # obs, _, _, _ = env.step(action)
 
     shutdown_helper()
 

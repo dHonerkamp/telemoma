@@ -81,3 +81,8 @@ The details on the sim environment installations, real robot codebase and instru
   - `conda activate telemoma && pip install -e . && source /opt/ros/noetic/setup.bash`
 - `python telemoma/demo_real.py --robot hsr --teleop_config telemoma/configs/only_vision.py`
 
+
+### VR
+1. Start SteamVR and make sure all is connected. In a new place, first to the room-setup thing it prompts you to do
+2. `bullet_vr`
+3. run script
