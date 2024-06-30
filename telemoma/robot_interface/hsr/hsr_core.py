@@ -114,7 +114,7 @@ class HSR:
         joint_positions = np.zeros(self.ik_solver.number_of_joints)
         for joint in range(3, self.ik_solver.number_of_joints):
             joint_positions[joint] = p[self.ik_solver.joint_names[joint]]
-        print (joint_positions)
+        # print (joint_positions)
         eef_matrix = self.ik_solver.fk(joint_positions)
         q = T.quaternion_from_matrix(eef_matrix)
         t = T.translation_from_matrix(eef_matrix)
@@ -186,7 +186,7 @@ class HSR:
                 self.arm_writer.write(arm_traj)
 
             if abs(gripper_act - self.gripper_state) > 0.2:
-                print (gripper_act, self.gripper_state)
+                print(f"gripper_act: {gripper_act}, gripper_state: {self.gripper_state}")
                 gripper_cmd = gripper_act*(self.gripper_cmd_max - self.gripper_cmd_min) + self.gripper_cmd_min
                 if gripper_act == 0:
                     self.gripper.apply_force(0.6, sync=False)

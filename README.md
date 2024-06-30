@@ -83,6 +83,15 @@ The details on the sim environment installations, real robot codebase and instru
 
 
 ### VR
+Installation
+1. Don't install ros-noetic-desktop-full, but only the basic version, otherwise will break VR. ros-noetic-tmc-desktop-full will also break it!
+2. `sudo apt install sudo ros-noetic-hsrb-common ros-noetic-hsrb-interface-py ros-noetic-tmc-common-msgs`
+3. DON'T do this one: `ros-noetic-hsrb-robot`
+4. conda create -n telemoma python=3.11
+5. install robot_io: https://github.com/dHonerkamp/robot_io/blob/main/docs/teleoperation.md
+6. install telemoma dependencies `pip install -e .`
+7. install real-robot telemoma dependecies, see real-robots.md / Dockerfile
+
 1. Start SteamVR and make sure all is connected. In a new place, first to the room-setup thing it prompts you to do
 2. `bullet_vr`
 3. run script

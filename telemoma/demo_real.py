@@ -1,4 +1,5 @@
 import rospy
+import numpy as np
 
 from telemoma.human_interface.teleop_policy import TeleopPolicy
 from telemoma.human_interface.htc import HTCPolicy
@@ -8,6 +9,8 @@ from importlib.machinery import SourceFileLoader
 COMPATIBLE_ROBOTS = ['tiago', 'hsr']
 
 def main(args):
+    np.set_printoptions(precision=3)
+                           
     teleop_config = SourceFileLoader('conf', args.teleop_config).load_module().teleop_config
 
     if args.robot == 'tiago':
@@ -38,9 +41,11 @@ def main(args):
     teleop = TeleopPolicy(teleop_config)
     teleop.start()
 
-    for interface in teleop.interfaces:
-        if isinstance(interface, HTCPolicy):
-            teleop.input_device.robot = env.hsr
+    using_htc = False
+    for interface_key, interface in teleop.interfaces.items():
+        if interface_key == 'htc':
+            interface.input_device.robot = env.hsr
+            using_htc = True
 
     def shutdown_helper():
         teleop.stop()
@@ -48,12 +53,16 @@ def main(args):
 
     while not rospy.is_shutdown():
         action = teleop.get_action(obs) # get_random_action()
-        buttons = action.extra['buttons'] if 'buttons' in action.extra else {}
+        # buttons = action.extra['buttons'] if 'buttons' in action.extra else {}
     
-        if buttons.get('A', False) or buttons.get('B', False):
-            break
+        # if buttons.get('A', False) or buttons.get('B', False):
+        #     break
+        
         # TODO: add again
-        # obs, _, _, _ = env.step(action)
+        if (not using_htc) or action.extra["active"]:
+            obs, _, _, _ = env.step(action)
+            # print(action)
+            pass
 
     shutdown_helper()
 

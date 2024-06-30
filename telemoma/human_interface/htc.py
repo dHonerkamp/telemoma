@@ -3,7 +3,8 @@ import time
 import numpy as np
 from telemoma.human_interface.teleop_core import BaseTeleopInterface, TeleopAction, TeleopObservation
 from telemoma.utils.general_utils import run_threaded_command
-from telemoma.utils.transformations import quat_diff, quat_to_euler, rmat_to_quat, add_quats
+from telemoma.utils.transformations import quat_diff, quat_to_euler, rmat_to_quat, add_quats, add_angles, angle_diff
+from telemoma.human_interface.vrinput import VrInput
 
 
 def vec_to_reorder_mat(vec):
@@ -42,7 +43,6 @@ class HTCPolicy(BaseTeleopInterface):
         workspace_limits = [[-10, -10, 0.0], [10, 10, 2]]  # [x, y, z, rot_x, rot_y, rot_z]
         self.teleop_rotation_offset = [0, 0, 0, 1.]
         
-        from robot_io.input_devices.vr_input import VrInput
         self.input_device = VrInput(robot=None, 
                                     button_hold_threshold=60, 
                                     workspace_limits=workspace_limits, 
@@ -243,44 +243,61 @@ class HTCPolicy(BaseTeleopInterface):
 
         # TODO: what quaternion convention? Assume robotio returns like ros, xyzw. What does telemoma want?
         #   -> telemoma uses scipy, so xyzw. But the I guess the omnigibson code probably uses wxyz
-        robotio_action, robotio_info = self.input_device.get_action()
-        controller_pos_bf = robotio_action["controller_pos_bf"]
-        controller_orn_bf = robotio_action["controller_orn_bf"]
-        do_grip = robotio_action["trigger"]
-    
         teleop_action = self.get_default_action()
-        teleop_action.base = np.zeros(3)
-        teleop_action.torso = 0.0
-        # update right hand related info
-        # for arm_name, arm in zip(["left", "right"], self.robot_arms):
-        arm_name = "right"
-        # if arm in self.controllers:
-        teleop_action[arm_name] = np.concatenate((
-            # self.raw_data["transforms"]["controllers"][arm][0],
-            controller_pos_bf,
-            # T.quat2euler(T.quat_multiply(
-            quat_to_euler(add_quats(
-                # self.raw_data["transforms"]["controllers"][arm][1],
-                controller_orn_bf,
-                self.teleop_rotation_offset[arm_name]
-            )),
-            [do_grip]
-        ))
-            # teleop_action.is_valid[arm_name] = self._is_valid_transform(self.raw_data["transforms"]["controllers"][arm])
-            # else:
-            #     teleop_action.is_valid[arm_name] = False
-        # update base and reset info
-        # TODO:
-        # if "right" in self.controllers:
-        #     teleop_action.reset["right"] = self.raw_data["button_data"]["right"]["press"]["grip"]
-        #     right_axis = robotio_action["grip"]
-        #     teleop_action.base[0] = right_axis["touchpad_y"] * self.movement_speed
-        #     teleop_action.torso = -right_axis["touchpad_x"] * self.movement_speed
-        # if "left" in self.controllers:
-        #     teleop_action.reset["left"] = self.raw_data["button_data"]["left"]["press"]["grip"]
-        #     left_axis = self.raw_data["button_data"]["left"]["axis"]
-        #     teleop_action.base[1] = -left_axis["touchpad_x"] * self.movement_speed
-        #     teleop_action.base[2] = left_axis["touchpad_y"] * self.movement_speed
+        # NOTE: hsr by default reads only the left arm commands
+        arm_name = "left"
+
+        robotio_action, robotio_info = self.input_device.get_action()
+        if (robotio_action is None) or (not robotio_action["deadman_pressed"]):
+            teleop_action.extra["active"] = False
+            return teleop_action
+        else:
+            cur_pose = self.input_device.robot.eef_pose
+            cur_pos, cur_euler = cur_pose[:3], quat_to_euler(cur_pose[3:])
+
+            controller_pos_bf = robotio_action["controller_pos_bf"]
+            pos_delta = controller_pos_bf - cur_pos
+
+            controller_orn_bf = robotio_action["controller_orn_bf"]
+            controller_orn_bf_adjusted_euler = quat_to_euler(add_quats(
+                                                                # self.raw_data["transforms"]["controllers"][arm][1],
+                                                                controller_orn_bf,
+                                                                self.teleop_rotation_offset))
+            euler_delta = angle_diff(controller_orn_bf_adjusted_euler, cur_euler)
+
+            do_open = not robotio_action["trigger"]
+            teleop_action.extra["active"] = True
+        
+            # update right hand related info
+            # for arm_name, arm in zip(["left", "right"], self.robot_arms):
+            # if arm in self.controllers:
+            teleop_action[arm_name] = np.concatenate((
+                # self.raw_data["transforms"]["controllers"][arm][0],
+                pos_delta,
+                # T.quat2euler(T.quat_multiply(
+                euler_delta,
+                [do_open]
+            ))
+                # teleop_action.is_valid[arm_name] = self._is_valid_transform(self.raw_data["transforms"]["controllers"][arm])
+                # else:
+                #     teleop_action.is_valid[arm_name] = False
+            # update base and reset info
+            # TODO:
+            # if "right" in self.controllers:
+            #     teleop_action.reset["right"] = self.raw_data["button_data"]["right"]["press"]["grip"]
+            #     right_axis = robotio_action["grip"]
+            #     teleop_action.base[0] = right_axis["touchpad_y"] * self.movement_speed
+            #     teleop_action.torso = -right_axis["touchpad_x"] * self.movement_speed
+            # if "left" in self.controllers:
+            #     teleop_action.reset["left"] = self.raw_data["button_data"]["left"]["press"]["grip"]
+            #     left_axis = self.raw_data["button_data"]["left"]["axis"]
+            #     teleop_action.base[1] = -left_axis["touchpad_x"] * self.movement_speed
+            #     teleop_action.base[2] = left_axis["touchpad_y"] * self.movement_speed
+
+            if teleop_action.extra["active"]:
+                print(f"cur_pose: {cur_pos}, controller_pos_bf: {controller_pos_bf}, pos_delta: {pos_delta}, do_open: {do_open}")
+                # print(f"cur_euler: {cur_euler}, controller_orn_bf_adjusted_euler: {controller_orn_bf_adjusted_euler}, euler_delta: {euler_delta}")
+                pass
 
         return teleop_action
 
