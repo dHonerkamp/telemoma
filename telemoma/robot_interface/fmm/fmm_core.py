@@ -23,9 +23,11 @@ class FMM:
         self.gripper_max = 0.08
         self.gripper_min = 0.0
 
+        self.robot = FmmInterfaceReal()
+
+
         while not rospy.is_shutdown():
             try:
-                self.robot = FmmInterfaceReal()
 
                 dir_path = os.path.dirname(os.path.realpath(__file__))
                 self.ik_solver = TracIKSolver(dir_path+"/../urdf/fmm_full.urdf", "base_link", "panda_hand",
@@ -38,7 +40,7 @@ class FMM:
         # Taken from fmm.yaml
         self.reset_pose = {
             "torso": 0.0,
-            "arm" : [-0.161, 0.448, 0.059, -1.074, 0.102, 1.420, 0.792],
+            "arm" : np.array([-0.161, 0.448, 0.059, -1.074, 0.102, 1.420, 0.792]),
             "head": [0.0, 0.0]
         }
 
@@ -53,19 +55,19 @@ class FMM:
     @property
     def gripper_state(self):
  
-        dist = self.robot.panda.gripper_pos()
+        dist = self.robot.panda.gripper_pos
 
         return (dist - self.gripper_min) / (self.gripper_max - self.gripper_min)
 
     def get_delta_pose(self):
         # returns a 3d vector corresponding to change in position in x, y (2d) and change in angle in z (1d)
-        current_pose = self.robot.get_base_pose_global()
+        current_pose = np.array(self.robot.get_base_pose_global())
 
         current_pos = current_pose[:3]
         reference_pos = self.reference_pos[:3]
         delta_pos = current_pos - reference_pos
 
-        current_quat = current_pos[3:]
+        current_quat = current_pose[3:]
         reference_quat = self.reference_pos[3:]
         delta_quat = quat_diff(current_quat, reference_quat)
         delta_euler = quat_to_euler(delta_quat)

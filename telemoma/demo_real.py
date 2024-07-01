@@ -6,7 +6,7 @@ from telemoma.human_interface.htc import HTCPolicy
 
 from importlib.machinery import SourceFileLoader
 
-COMPATIBLE_ROBOTS = ['tiago', 'hsr']
+COMPATIBLE_ROBOTS = ['tiago', 'hsr', 'fmm']
 
 def main(args):
     np.set_printoptions(precision=3)
@@ -34,6 +34,15 @@ def main(args):
                 torso_enabled=False,
                 arm_enabled=True,
             )
+    elif args.robot == 'fmm':
+        from telemoma.robot_interface.fmm.fmm_gym import FMMGym
+        env = FMMGym(
+                frequency=10,
+                head_policy=None,
+                base_enabled=teleop_config.base_controller is not None,
+                torso_enabled=teleop_config.base_controller is not None,
+                arm_enabled=True,
+            )
     else:
         raise ValueError(f'Unknown robot: {args.robot}')
     obs = env.reset()
@@ -44,7 +53,12 @@ def main(args):
     using_htc = False
     for interface_key, interface in teleop.interfaces.items():
         if interface_key == 'htc':
-            interface.input_device.robot = env.hsr
+            if args.robot == 'hsr':
+                interface.input_device.robot = env.hsr
+            elif args.robot == 'fmm':
+                interface.input_device.robot = env.fmm
+            else:
+                raise NotImplementedError()
             using_htc = True
 
     def shutdown_helper():

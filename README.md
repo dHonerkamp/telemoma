@@ -85,13 +85,54 @@ The details on the sim environment installations, real robot codebase and instru
 ### VR
 Installation
 1. Don't install ros-noetic-desktop-full, but only the basic version, otherwise will break VR. ros-noetic-tmc-desktop-full will also break it!
-2. `sudo apt install sudo ros-noetic-hsrb-common ros-noetic-hsrb-interface-py ros-noetic-tmc-common-msgs`
+2. `sudo apt install ros-noetic-hsrb-common ros-noetic-hsrb-interface-py ros-noetic-tmc-common-msgs`
 3. DON'T do this one: `ros-noetic-hsrb-robot`
 4. conda create -n telemoma python=3.11
 5. install robot_io: https://github.com/dHonerkamp/robot_io/blob/main/docs/teleoperation.md
 6. install telemoma dependencies `pip install -e .`
 7. install real-robot telemoma dependecies, see real-robots.md / Dockerfile
+8. FMM: DON't instlal `ros-noetic-franka-ros`
+9. `sudo apt install ros-noetic-ridgeback-description ros-noetic-realsense2-description ros-noetic-arbotix-msgs ros-noetic-catkin python3-catkin-tools`
+ros-noetic-franka-description ros-noetic-franka-msgs ros-noetic-controller-interface ros-noetic-controller-manager
+  ros-noetic-controller-manager-msgs ros-noetic-franka-gripper ros-noetic-franka-hw ros-noetic-franka-example-controllers
+10. `mkdir -p catkin_ws_franka/src && cd src && git clone git@rlgit.informatik.uni-freiburg.de:fmm/rl_franka.git && source devel/setup/bash`
+11. `pip install spatialmath-python`
 
 1. Start SteamVR and make sure all is connected. In a new place, first to the room-setup thing it prompts you to do
 2. `bullet_vr`
 3. run script
+
+FMM:
+1. unlock brakes
+2. activate FCI
+3. BASE COMPUTER: `roslaunch rl_franka fmm_franka_control.launch`
+4. This computer / terminal running from: `sudo route add -net 192.168.131.0 netmask 255.255.255.0 gw 192.168.0.40` otherwise rosservice calls to controller_manager will fail
+
+### IMBIT Network
+1. Added to DHCP in Router Config (Archer in browser)
+2. Changed `/etc/netplan/00-installer-config.yaml` -> backup in `sudo vim /etc/netplan/00-installer-config.yaml.building080`
+```
+# This is the network config written by 'subiquity'
+network:
+  ethernets:
+    eno1:
+    dhcp4: yes
+      addresses:
+              #- 10.8.105.204/24
+      - 192.168.0.205/24
+      gateway4: 192.168.0.1
+      nameservers:
+        addresses:
+        - 8.8.8.8
+        - 8.8.4.4
+          #search:
+          #- informatik.privat
+          #- imbit.privat
+          #- informatik.uni-freiburg.de
+  version: 2
+```
+3. `sudo netplan apply`
+4. Add `192.168.0.40    fmm-4` to `/etc/hosts`
+
+
+
