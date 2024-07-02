@@ -1,5 +1,6 @@
 import rospy
 import numpy as np
+import time
 
 from telemoma.human_interface.teleop_policy import TeleopPolicy
 from telemoma.human_interface.htc import HTCPolicy
@@ -76,6 +77,8 @@ def main(args):
         if (not using_htc) or action.extra["active"]:
             obs, _, _, _ = env.step(action)
             # print(action)
+
+            # time.sleep(0.05)
             pass
 
     shutdown_helper()

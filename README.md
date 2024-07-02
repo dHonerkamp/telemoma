@@ -105,8 +105,16 @@ ros-noetic-franka-description ros-noetic-franka-msgs ros-noetic-controller-inter
 FMM:
 1. unlock brakes
 2. activate FCI
-3. BASE COMPUTER: `roslaunch rl_franka fmm_franka_control.launch`
-4. This computer / terminal running from: `sudo route add -net 192.168.131.0 netmask 255.255.255.0 gw 192.168.0.40` otherwise rosservice calls to controller_manager will fail
+3. BASE COMPUTER: 
+```
+roslaunch fmm amcl.launch &
+roslaunch rl_franka fmm_franka_control.launch
+```
+4. USER COMPUTER: 
+`rosrun map_server map_server /home/honerkam/repos/mobile-rl/real_world2/map.yaml`
+5. This computer / terminal running from: `sudo route add -net 192.168.131.0 netmask 255.255.255.0 gw 192.168.0.40` otherwise rosservice calls to controller_manager will fail
+6. `source catkin_ws_franka/devel/setup.bash && rviz -d /home/honerkam/repos/telemoma/rviz.rviz`
+
 
 ### IMBIT Network
 1. Added to DHCP in Router Config (Archer in browser)

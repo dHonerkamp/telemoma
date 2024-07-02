@@ -66,6 +66,12 @@ class FMMGym(gym.Env):
             shape=(2+1,) # 2d x, y position delta, 1d z orientation delta
         )
 
+        ob_space['torso'] = gym.spaces.Box(
+            low=-np.inf,
+            high=np.inf,
+            shape=(1,)
+        )
+
         for cam in self.cameras.keys():
             
             ob_space[f'{cam}_image'] = gym.spaces.Box(
@@ -100,14 +106,23 @@ class FMMGym(gym.Env):
                 shape=(3,), # 2d x, y linear velocity, 1d z angular velocity
             )
 
+        if self.torso_enabled:
+            act_space['torso'] = gym.spaces.Box(
+                low=-np.inf,
+                high=np.inf,
+                shape=(1,),
+            )
+
+
         return gym.spaces.Dict(act_space)
 
 
     def _observation(self):
         observations = AttrDict({
             'left': np.r_[self.fmm.eef_pose, self.fmm.gripper_state],
-            'right': np.array([0, 0, 0, 0, 0, 0, 1]),
-            'base': np.array(self.fmm.get_delta_pose())
+            'right': np.array(self.fmm.robot.panda.state.q),
+            'base': np.array(self.fmm.get_delta_pose()),
+            "torso": np.array(self.fmm.robot.get_tower_joint_position()),
         })
 
         for cam in self.cameras.keys():

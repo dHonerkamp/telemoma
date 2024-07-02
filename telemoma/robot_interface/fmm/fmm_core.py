@@ -30,8 +30,12 @@ class FMM:
             try:
 
                 dir_path = os.path.dirname(os.path.realpath(__file__))
-                self.ik_solver = TracIKSolver(dir_path+"/../urdf/fmm_full.urdf", "base_link", "panda_hand",
-                                              timeout=0.025, epsilon=5e-4, solve_type="Distance")
+                self.ik_solver = TracIKSolver(dir_path+"/../urdf/fmm_full.urdf", 
+                                              "panda_link0", 
+                                              "panda_hand",
+                                              timeout=0.025, 
+                                              epsilon=5e-4, 
+                                              solve_type="Distance")
 
                 break
             except:
@@ -39,7 +43,7 @@ class FMM:
 
         # Taken from fmm.yaml
         self.reset_pose = {
-            "torso": 0.0,
+            "torso": 0.25,
             "arm" : np.array([-0.161, 0.448, 0.059, -1.074, 0.102, 1.420, 0.792]),
             "head": [0.0, 0.0]
         }
@@ -50,7 +54,8 @@ class FMM:
 
     @property
     def eef_pose(self):
-        return np.array(self.robot.get_franke_ee_pose_baseframe())
+        # return np.array(self.robot.get_franke_ee_pose_baseframe())
+        return np.array(self.robot.get_tf("panda_hand", "panda_link0"))
 
     @property
     def gripper_state(self):
@@ -99,18 +104,21 @@ class FMM:
             if ik_solution is None:
                 print('No IK solution for ', pos, quat, self.eef_pose)
             else:
-                torso_pos, joint_positions = ik_solution[0], ik_solution[1:]
-                self.robot.panda.async_move_joint_position(joint_positions, vel_scale=0.4)
-                self.robot.pub_tower_q(torso_pos)
+                joint_positions = ik_solution
+                # self.robot.panda.async_move_joint_position(joint_positions, vel_scale=0.4)
+                joint_velocities = np.clip((np.array(joint_positions) - self.robot.panda.state.q), -0.4, 0.4)
+                # print(f"joint_velocities: {joint_velocities}")
+                self.robot.panda.async_move_joint_velocity(joint_velocities)
 
             if abs(gripper_act - self.gripper_state) > 0.2:
-                print (gripper_act, self.gripper_state)
+                print(gripper_act, self.gripper_state)
                 self.robot.panda.async_set_gripper_position(gripper_act)
 
         if self.base_enabled:
             base_pose = action['base']
             if base_pose is None:
-                self.robot.pub_base_qd([0., 0., 0.])
+                # self.robot.pub_base_qd([0., 0., 0.])
+                pass
             else:
                 lin_cmd = np.zeros(3)
                 lin_cmd[:2] = base_pose[:2]
@@ -122,6 +130,12 @@ class FMM:
                     ang_cmd = self.ang_scale * ang_cmd
 
                 self.robot.pub_base_qd([lin_cmd[0], lin_cmd[1], ang_cmd[2]])
+
+        if self.torso_enabled:
+            torso_delta = action['torso']
+            goal_position = np.clip(self.robot.get_tower_joint_position() + torso_delta, 0.0, 0.5)
+            self.robot.pub_tower_q(goal_position)
+
 
     def reset(self, reset_arms=True):
         if reset_arms:

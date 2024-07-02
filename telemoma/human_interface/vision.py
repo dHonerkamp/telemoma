@@ -296,6 +296,8 @@ class VisionTeleopPolicy(BaseTeleopInterface):
         target_torso_offset = body_torso_current - body_torso_reference
         robot_torso_offset = robot_torso_current - robot_torso_reference
 
+        # print(f"torso: {np.clip(target_torso_offset - robot_torso_offset, -0.02, 0.02) }")
+
         return np.clip(target_torso_offset - robot_torso_offset, -0.02, 0.02) 
     
     def get_hand_action(self, obs: TeleopObservation, side='right') -> np.ndarray:
