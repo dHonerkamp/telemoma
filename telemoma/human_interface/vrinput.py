@@ -215,7 +215,7 @@ class VrInput:
         """
         # pos, orn = self.robot.get_tcp_pos_orn()
         if hasattr(self, 'robot'):
-            pose = self.robot.eef_pose
+            pose = self.robot.eef_pose_global
             pos, orn = pose[:3], pose[3:]
         else:
             print("NO ROBOT SET FOR POSE MATCHING!")

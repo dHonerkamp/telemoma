@@ -92,15 +92,15 @@ Installation
 6. install telemoma dependencies `pip install -e .`
 7. install real-robot telemoma dependecies, see real-robots.md / Dockerfile
 8. FMM: DON't instlal `ros-noetic-franka-ros`
-9. `sudo apt install ros-noetic-ridgeback-description ros-noetic-realsense2-description ros-noetic-arbotix-msgs ros-noetic-catkin python3-catkin-tools`
-ros-noetic-franka-description ros-noetic-franka-msgs ros-noetic-controller-interface ros-noetic-controller-manager
-  ros-noetic-controller-manager-msgs ros-noetic-franka-gripper ros-noetic-franka-hw ros-noetic-franka-example-controllers
+9. `sudo apt install ros-noetic-ridgeback-description ros-noetic-realsense2-description ros-noetic-arbotix-msgs ros-noetic-catkin python3-catkin-tools ros-noetic-franka-description ros-noetic-franka-msgs ros-noetic-controller-interface ros-noetic-controller-manager ros-noetic-controller-manager-msgs ros-noetic-franka-gripper ros-noetic-franka-hw ros-noetic-franka-example-controllers`
+
 10. `mkdir -p catkin_ws_franka/src && cd src && git clone git@rlgit.informatik.uni-freiburg.de:fmm/rl_franka.git && source devel/setup/bash`
-11. `pip install spatialmath-python`
+11. inside catkin_ws_franka: `git clone https://github.com/orocos/orocos_kinematics_dynamics.git &&catkin build && source devel/setup/bash`
+12. `pip install spatialmath-python`
 
 1. Start SteamVR and make sure all is connected. In a new place, first to the room-setup thing it prompts you to do
 2. `bullet_vr`
-3. run script
+3. run script. NOTE: calibrate robot_io axis to match the map frame axis
 
 FMM:
 1. unlock brakes
@@ -114,6 +114,7 @@ roslaunch rl_franka fmm_franka_control.launch
 `rosrun map_server map_server /home/honerkam/repos/mobile-rl/real_world2/map.yaml`
 5. This computer / terminal running from: `sudo route add -net 192.168.131.0 netmask 255.255.255.0 gw 192.168.0.40` otherwise rosservice calls to controller_manager will fail
 6. `source catkin_ws_franka/devel/setup.bash && rviz -d /home/honerkam/repos/telemoma/rviz.rviz`
+
 
 
 ### IMBIT Network

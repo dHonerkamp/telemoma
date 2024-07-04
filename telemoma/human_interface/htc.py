@@ -1,10 +1,29 @@
 from typing import Tuple
 import time
 import numpy as np
+from geometry_msgs.msg import Pose
+import tf2_geometry_msgs 
+import rospy
+from scipy.spatial.transform.rotation import Rotation as R
+
 from telemoma.human_interface.teleop_core import BaseTeleopInterface, TeleopAction, TeleopObservation
 from telemoma.utils.general_utils import run_threaded_command
-from telemoma.utils.transformations import quat_diff, quat_to_euler, rmat_to_quat, add_quats, add_angles, angle_diff
+from telemoma.utils.transformations import quat_diff, quat_to_euler, rmat_to_quat, add_quats, add_angles, angle_diff, change_pose_frame, euler_to_quat
 from telemoma.human_interface.vrinput import VrInput
+
+
+def to_pose_stamped_msg(tf, from_frame):
+    pose_stamped = tf2_geometry_msgs.PoseStamped()
+    pose_stamped.pose.position.x = tf[0]
+    pose_stamped.pose.position.y = tf[1]
+    pose_stamped.pose.position.z = tf[2]
+    pose_stamped.pose.orientation.x = tf[3]
+    pose_stamped.pose.orientation.y = tf[4]
+    pose_stamped.pose.orientation.z = tf[5]
+    pose_stamped.pose.orientation.w = tf[6]
+    pose_stamped.header.frame_id = from_frame
+    pose_stamped.header.stamp = rospy.Time(0)
+    return pose_stamped
 
 
 def vec_to_reorder_mat(vec):
@@ -252,28 +271,37 @@ class HTCPolicy(BaseTeleopInterface):
             teleop_action.extra["active"] = False
             return teleop_action
         else:
-            cur_pose = self.input_device.robot.eef_pose
-            cur_pos, cur_euler = cur_pose[:3], quat_to_euler(cur_pose[3:])
-
-            controller_pos_bf = robotio_action["controller_pos_bf"]
-            pos_delta = controller_pos_bf - cur_pos
-
-            controller_orn_bf = robotio_action["controller_orn_bf"]
-            controller_orn_bf_adjusted_euler = quat_to_euler(add_quats(
-                                                                # self.raw_data["transforms"]["controllers"][arm][1],
-                                                                controller_orn_bf,
-                                                                self.teleop_rotation_offset))
-            euler_delta = angle_diff(controller_orn_bf_adjusted_euler, cur_euler)
+            cur_pose_bf = self.input_device.robot.eef_pose
+            cur_pos_bf, cur_euler_bf = cur_pose_bf[:3], quat_to_euler(cur_pose_bf[3:])
+            cur_pos_mapframe = self.input_device.robot.eef_pose_global[:3]
 
             do_open = not robotio_action["trigger"]
             teleop_action.extra["active"] = True
-        
+
+            controller_pos_mapframe = robotio_action["controller_pos_bf"]
+            controller_orn_mapframe = robotio_action["controller_orn_bf"]
+            controller_orn_mapframe_adjusted_euler = quat_to_euler(add_quats(
+                                                                # self.raw_data["transforms"]["controllers"][arm][1],
+                                                                controller_orn_mapframe,
+                                                                self.teleop_rotation_offset))
+            controller_orn_mapframe_adjusted_quat = euler_to_quat(controller_orn_mapframe_adjusted_euler)
+            pose_msg = to_pose_stamped_msg(np.concatenate([controller_pos_mapframe, controller_orn_mapframe_adjusted_quat]),
+                                           from_frame="map")
+            pose_out = self.input_device.robot.robot.tf_buffer.transform(pose_msg, "panda_link0")
+
+            pos_bf = np.array([pose_out.pose.position.x, pose_out.pose.position.y, pose_out.pose.position.z])
+            q_bf = np.array([pose_out.pose.orientation.x, pose_out.pose.orientation.y, pose_out.pose.orientation.z, pose_out.pose.orientation.w])
+            euler_bf = quat_to_euler(q_bf)
+
+            pos_diff = pos_bf - cur_pos_bf
+            euler_delta = angle_diff(euler_bf, cur_euler_bf)
+
             # update right hand related info
             # for arm_name, arm in zip(["left", "right"], self.robot_arms):
             # if arm in self.controllers:
             teleop_action[arm_name] = np.concatenate((
                 # self.raw_data["transforms"]["controllers"][arm][0],
-                pos_delta,
+                pos_diff,
                 # T.quat2euler(T.quat_multiply(
                 euler_delta,
                 [do_open]
@@ -295,9 +323,9 @@ class HTCPolicy(BaseTeleopInterface):
             #     teleop_action.base[2] = left_axis["touchpad_y"] * self.movement_speed
 
             if teleop_action.extra["active"]:
-                print(f"cur_pose: {cur_pos}, controller_pos_bf: {controller_pos_bf}, pos_delta: {pos_delta}, do_open: {do_open}")
-                # print(f"cur_euler: {cur_euler}, controller_orn_bf_adjusted_euler: {controller_orn_bf_adjusted_euler}, euler_delta: {euler_delta}")
-                pass
+                print(f"cur_pos_mapframe: {cur_pos_mapframe}, controller_pos_mapframe: {controller_pos_mapframe}, pos_delta_mapframe: {controller_pos_mapframe - self.input_device.robot.eef_pose_global[:3]}, pos_delta_bf: {pos_diff}, do_open: {do_open}")
+            #     # print(f"cur_euler: {cur_euler}, controller_orn_bf_adjusted_euler: {controller_orn_bf_adjusted_euler}, euler_delta: {euler_delta}")
+            #     pass
 
         return teleop_action
 

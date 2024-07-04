@@ -9,5 +9,5 @@ cam = RealSenseCamera()
 teleop_config.arm_left_controller = 'htc'
 teleop_config.arm_right_controller = 'htc'
 teleop_config.base_controller = 'vision'
-# teleop_config.torso_controller = 'vision'
+teleop_config.torso_controller = 'vision'
 teleop_config.interface_kwargs.vision = dict(camera=cam, set_ref=True)

@@ -25,6 +25,16 @@ class FMM:
 
         self.robot = FmmInterfaceReal()
 
+        self.robot.panda.cm.set_cartesian_stiffness_low()
+        self.robot.panda.cm.set_joint_stiffness_low()
+
+        # JOINT_STIFFNESS_HIGH = [3000, 3000, 3000, 2500, 2500, 2000, 2000]
+        # JOINT_STIFFNESS_LOW  = [30.0, 30.0, 30.0, 25.0, 25.0, 20.0, 20.0]
+        # CARTESIAN_STIFFNESS_HIGH = [1000, 1000, 1000, 100, 100, 100]
+        # CARTESIAN_STIFFNESS_LOW  = [10.0, 10.0, 100.0, 1.0, 1.0, 1.0]
+        # self.robot.panda.cm.set_joint_stiffness(list(5 * np.array(JOINT_STIFFNESS_LOW)))
+        # self.robot.panda.cm.set_cartesian_stiffness(list(5 * np.array(CARTESIAN_STIFFNESS_LOW)))
+
 
         while not rospy.is_shutdown():
             try:
@@ -56,6 +66,10 @@ class FMM:
     def eef_pose(self):
         # return np.array(self.robot.get_franke_ee_pose_baseframe())
         return np.array(self.robot.get_tf("panda_hand", "panda_link0"))
+
+    @property
+    def eef_pose_global(self):
+        return np.array(self.robot.get_tf("panda_hand", "map"))
 
     @property
     def gripper_state(self):
@@ -140,7 +154,7 @@ class FMM:
     def reset(self, reset_arms=True):
         if reset_arms:
             if self.reset_pose is not None:
-                self.robot.panda.async_move_joint_position(self.reset_pose["arm"], vel_scale=0.4)
+                self.robot.panda.async_move_joint_position(self.reset_pose["arm"], vel_scale=0.2)
                 self.robot.pub_tower_q(self.reset_pose["torso"])
 
         # Skipping head reset

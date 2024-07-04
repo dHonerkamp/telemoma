@@ -12,10 +12,11 @@
             "console": "integratedTerminal",
             "justMyCode": false,
             "args": ["--robot",
-                     "hsr",
+                     "fmm",
                      "--teleop_config",
                     //  "telemoma/configs/only_vision.py"
-                     "telemoma/configs/only_vr.py"
+                    //  "telemoma/configs/only_vr.py"
+                     "telemoma/configs/vr_hand_vision_base.py"
                     ]
         },
         {
